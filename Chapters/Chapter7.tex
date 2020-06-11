@@ -1,0 +1,51 @@
+% Chapter 6
+% add following line for typesetting from subfiles
+% !TeX root = ../uet_thesis.tex
+% !TeX root = ../uet_thesis.bbl
+% !TeX root = ../references.bib
+\chapter{Conclusion} % Write in your own chapter title
+\label{Chapter7}
+\lhead{Chapter 7. \emph{Conclusion}} % Write in your own chapter title to set the page header
+%\section{Introduction}
+
+
+%6)	Conclusion
+%a)	Proposed solution better than conventional analogue techniques
+
+%To conclude following objectives have been achieved in this thesis:
+%==========================================
+%Variable Rate Multipulse Pulse Position Modulation (VR-MPPM) line coding is proposed as a novel solution to achieve joint brightness control and data transmission in a visible light communication system. Effectiveness of the proposed scheme is successfully demonstrated by hardware implementation.
+%
+%%The proposed solution selects codewords from an $n-bit$ blockcode for a given information symbol according to the brightness requirements of the light source. For a given brightness level, the allowed codewords maintain a fixed DC average value.
+%
+%
+%Linear time complexity iterative encoding and decoding algorithms are successfully developed and simulated in Matlab. Numerical analysis is performed to show the effectiveness of proposed solution. It is observed that the proposed scheme provides effective data transmission at all permissible brightness levels with maximum coderate at $50\%$ brightness. Coderate drops when brightness level is increased or decreased from here but never drops below the PPM case. In a future application optimized for high speed data transmission at maximum brightness level, LED might run at full brightness at $50\%$ code brightness index by doubling the magnitude of drive current. However the brightness resolution will be halved in this case. 
+%
+%Power spectral density of the proposed codes is evaluated to study the effect of brightness index and frame size on spectral characteristics. It is observed that the frequency response is smoothed with larger frame size. The spectrum value at null frequency and brightness index are seen to be interrelated by a square relation. DC component is increased four times when value of brightness index is doubled. Another observation is the presence of strong spectral components at pulse repetition and frame repetition frequencies which is a useful property for clock extraction to achieve transmitter-receiver synchronization.
+%
+%The trade-off strategy between achievable brightness resolution and the error free data transmission is devised by evaluating the objective function for optimal performance. For a given channel bit transition probability, there is a maximum value of achievable brightness resolution. A closed form solution is presented to find this optimum value. 
+%
+%
+%We built hardware setup to evaluate the performance of proposed encoding scheme practically that had
+%\begin{list}{$\cdot$}
+%\item A light source consisting of 84 high brightness white LEDs operates at 600 kbps.
+%\item TORX173 optical receiver capable of operation upto 6Mbps
+%Joint brightness control and data transmission using UART protocol at 250k baud.
+%\item Brightness control achieved using UART from 10\% to 90\% in steps of 10\%
+%\item Implementation of the VR-MPPM encoder and decoder at Digilent Nexys-2 board, Xilinx Spartan-3 FPGAs.
+%\item Evaluation of symbol error rate with respect to the symbol frame size and brightness index
+%\end{list}
+%
+%The experimental demonstration showed that VR-MPPM symbol error rate increases for larger frame sizes. On the other hand, for fixed frame size, symbol error rate is a bell shaped curve with maximum errors occurring around 50\% brightness.
+
+%========================
+%A new line code is proposed to serve the dual application of LED lights as illumination source and communication device. A novel algorithm is devised to map the information bits to variable rate pulse position modulation codeword that performs the encoding process in linear time complexity. The algorithm selects codeword for a given information symbol according to the brightness requirements of the light source. For a given brightness level, the allowed codewords maintain a fixed DC average value.
+
+%The power spectral density of the proposed codes is also evaluated to study the effect of brightness index and frame size on spectral characteristics. It is observed that the frequency response is smoothed with larger frame size. The spectrum value at null frequency and brightness index are related by a square relation. DC component is increased by four times when value of brightness index is doubled.
+%An optimization problem is formulated to find the underlying tradeoff between achievable brightness resolution and the successful data rate.
+%
+%===================================
+
+A novel variable-rate multi-pulse pulse position modulation (VR-MPPM) is proposed to achieve joint data transmission and brightness control of white LED based visible light communication system. In contrast to the conventional solutions employing two different modulation schemes for brightness control and data transmission the proposed approach achieves both the objectives by using single modulation scheme. The brightness control resolution depends upon the number of slots used per VR-MPPM symbol and the achievable data-rate depends on the number of pulsed slots per symbol. Simple iterative algorithms for encoder and decoder implementation are developed. 
+
+Proposed VR-MPPM scheme is successfully used for visible light communication, to jointly control brightness level as well as data transmission rate. Power spectral density (PSD) of VR-MPPM is evaluated to analyze the effect of brightness level as well as brightness resolution on its spectral characteristics. In addition, the underlying tradeoffs between achievable brightness resolution and the successful data transmission rate are shown for optimal performance. Numerical results for performance evaluation are presented to show the effectiveness of the proposed scheme. Experimental results are also obtained to quantify the effect of brightness-index on the symbol error rate performance. As a future work, one could explore how different pulse shapes used for bandwidth improvement will affect the brightness control. In addition, the selection and performance evaluation of error correction codes for the proposed scheme may be explored.

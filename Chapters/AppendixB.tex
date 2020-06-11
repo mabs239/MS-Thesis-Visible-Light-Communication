@@ -1,0 +1,1079 @@
+% Appendix A
+% add following line for typesetting from subfiles
+% !TeX root = ../uet_thesis.tex
+\chapter{FPGA Implementation}
+\label{AppendixB}
+\lhead{Appendix B. \emph{FPGA Implementation}}
+
+%\lstset{language=ASC}
+\section{Encoder Module}
+\label{sec:Encode2ts}
+%\begin{lstlisting}[style=verilog-style,basicstyle=\footnotesize]
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name:	Encode2ts
+// Project Name: 	VLC
+
+// Engineer: 		Muhammad Abu Bakar Siddique
+// email:			mabs239@gmail.com
+// Create Date:  	09:52:41 11/25/2011 
+// Design Name: 	Visible Light Communication
+// Target Devices:Spartan-3 
+// Tool versions: Nexys-2 from Digilent, Xilinx ISE 13.2
+// Description: 	Encodes parallel data input to VR-MPPM encoded codeword 
+//						Takes 'n' clock cycles for the conversion
+//
+// Dependencies: 	nCrROM.v
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module Encode2ts(m,frameSize,r,out,clk,start,complete,serOut);
+	output [19:0] out;
+	output complete;
+	output serOut;
+
+	input [19:0] m; //input number
+	input [7:0] r; //pulsed slots
+	input [7:0] frameSize; //slots per codeword n
+	input clk;
+	input start;
+  
+	reg [7:0] n; //index outRam
+	reg [19:0] loopCount;
+  	reg [19:0] outWord;	//Encoded output word, appears after 'n' clock periods
+	reg [19:0] inWord;	//Encoded output word, appears after 'n' clock periods
+	reg serialTemp;
+	reg [7:0] unitCount;//Alternate to r
+	reg overFlow;		//Output signal to indicate input value is greater than possible with given n and r  
+	reg tempComplete;
+	wire [19:0] y;		//getnCr module output connecte to this wire. Calculates nCr
+
+	nCrROM ncr1(.nCr(y),.n(n),.r(unitCount));
+	assign out	= outWord[19:0];
+	assign complete = tempComplete;
+	assign serOut = serialTemp;
+
+	initial
+	begin
+		tempComplete<=0;
+		loopCount <= 0;
+		outWord<=0;
+	end
+	always @(posedge clk, posedge start)  
+	begin		
+		if(start)
+		begin
+			tempComplete<=0;
+			loopCount <= frameSize;
+			n <= frameSize-1;
+			outWord<=0;
+			inWord<=m;
+			unitCount<=r;
+		end
+		else 
+		begin
+			if(loopCount!=0) //main loop
+			begin
+				tempComplete<=0;
+				if(inWord>=y) 
+				begin
+					inWord<=inWord-y;
+					outWord[n]<=1'b1;
+					serialTemp<=1'b1;
+					unitCount<=unitCount-1;
+				end	
+				else
+				begin
+					outWord[n]<=1'b0;
+					serialTemp<=1'b0;
+				end
+				n<=n-1;
+				loopCount<=loopCount-1;
+			end
+			else
+			if (loopCount==0)
+			begin
+				tempComplete<=1;
+			end
+		end
+	end
+endmodule
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+\newpage
+\section{Decoder Module}
+\label{sec:Decode2ts}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name:	Decode2ts
+// Project Name: 	VLC
+
+// Engineer: 		Muhammad Abu Bakar Siddique
+// email:			mabs239@gmail.com
+// Create Date:  	09:52:41 11/25/2011 
+// Design Name: 	Visible Light Communication
+// Target Devices:Spartan-3 
+// Tool versions: Nexys-2 from Digilent, Xilinx ISE 13.2
+// Description: 	Decodes input VR-MPPM codeword to origional symbol
+//						
+//
+// Dependencies: 	nCrROM.v
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module Decode2ts(m,frameSize,r,out,clk,start,complete);
+	input [19:0] m; //input number
+	input [7:0] r; //pulsed slots
+	input [7:0] frameSize; //slots per codeword n
+	output [19:0] out;
+	input clk;
+	input start;
+	output complete;
+
+	reg [7:0] n; //index outRam
+	reg [7:0] loopCount;
+  	reg [19:0] outWord;	//Encoded output word, appears after 'n' clock periods
+	reg [19:0] inWord;	//Encoded output word, appears after 'n' clock periods
+	reg [7:0] unitCount;//Alternate to r
+	reg tempComplete;
+	reg overFlow;		//Output signal to indicate input value is greater than possible with given n and r  
+	wire [19:0] y;		//getnCr module output connecte to this wire. Calculates nCr
+	
+	assign out	= outWord;
+	assign complete = tempComplete;
+	nCrROM ncr1(.nCr(y),.n(n),.r(unitCount));
+	
+	initial
+	begin
+		loopCount <= 0;
+		outWord<=0;
+		overFlow<=1'b0;
+		tempComplete<=0;
+	end
+
+	always @(posedge clk, posedge start)
+	begin
+		if(start)
+		begin
+			loopCount<=frameSize;
+			n <= frameSize-1;
+			outWord<=0;
+			inWord<=m;
+			unitCount<=r;
+			overFlow<=1'b0;
+			tempComplete<=0;
+		end
+		else 
+		begin
+			if(loopCount!=0) //main loop
+			begin
+				tempComplete<=0;
+				if(inWord[n]==1) 
+				begin
+					outWord<=outWord+y;
+					unitCount<=unitCount-1;
+				end	
+				n<=n-1;
+				loopCount<=loopCount-1;
+				if (loopCount==1)
+					tempComplete<=1;
+			end
+		end //~start
+	end//always
+endmodule
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+
+\newpage
+\section{Clock Divider Module}
+\label{sec:clk_div}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name:	clk_div
+// Project Name: 	VLC
+
+// Engineer: 		Muhammad Abu Bakar Siddique
+// email:			mabs239@gmail.com
+// Create Date:  	09:52:41 11/25/2011 
+// Design Name: 	Visible Light Communication
+// Target Devices:Spartan-3 
+// Tool versions: Nexys-2 from Digilent, Xilinx ISE 13.2
+// Description: 	Divides clock to lower frequency, selectable through "newDiv" 
+//						parameter
+//
+// Dependencies: 	
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module clk_div(clk,newClk,newDiv);
+	//newDiv*2 cycles per new clock cycle
+	input clk;
+	input [25:0] newDiv;
+	output reg newClk;
+	reg [25:0] clkCount;
+	initial begin clkCount <= 0; newClk<=0; end
+	
+	always @(posedge clk)
+	begin
+		clkCount <= clkCount + 1;
+		
+		//Increase newDiv to increase the delay: h2ffffff used to slow 
+		// down nexys-2 board clock to low enough to be percievable by human eye
+		if (clkCount >=newDiv)
+		begin
+			newClk=~newClk;
+			clkCount<=0;
+		end
+	end
+endmodule
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+
+\newpage
+
+\section{Parallel-Serial Interface Module}
+\label{sec:p2p}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name:	p2p
+// Project Name: 	VLC
+
+// Engineer: 		Muhammad Abu Bakar Siddique
+// email:			mabs239@gmail.com
+// Create Date:  	09:52:41 11/25/2011 
+// Design Name: 	Visible Light Communication
+// Target Devices:Spartan-3 
+// Tool versions: Nexys-2 from Digilent, Xilinx ISE 13.2
+// Description: 	Parallel<->Serial interface. Sends and receives data over external 
+//						serial link.
+//
+// Dependencies: 	
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module p2p(pin,pout,serIn,serOut,clk,start,frameSize,complete);
+	input clk,start;
+	input [19:0] pin;
+	input serIn;
+	input [7:0] frameSize;
+	output [19:0] pout; 
+	output serOut;
+	output complete;
+	
+	reg tempComplete;
+	reg [7:0] loopCount;	
+	reg [7:0] n;
+	reg [19:0] tempIn;
+	reg [19:0] tempOut;
+	
+	assign complete = tempComplete;
+	assign pout=tempOut;
+	assign serOut = tempIn[n];
+	
+	initial
+	begin
+		loopCount <= 0;
+		tempComplete<=0;
+	end
+
+	always @(negedge clk) if(!tempComplete) tempOut[n]<=serIn;
+	
+	always @(posedge clk, posedge start)  
+	begin
+		if(start)
+		begin
+			loopCount <= frameSize;
+			n<=frameSize-1;
+			tempComplete<=0;
+			tempIn<=pin;
+		end
+		else 
+		begin
+			if(loopCount!=0) //main loop
+			begin
+				loopCount<=loopCount-1;
+				n<=n-1;
+			end
+			
+			else
+			if(loopCount==0) //main loop
+				tempComplete<=1'b1;
+		end //not start
+	end//always
+endmodule
+
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+\newpage
+\section{VR-MPPM encoded Parallel-Serial Interface Module}
+\label{sec:ENp2p}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name:	ENp2p
+// Project Name: 	VLC
+
+// Engineer: 		Muhammad Abu Bakar Siddique
+// email:			mabs239@gmail.com
+// Create Date:  	09:52:41 11/25/2011 
+// Design Name: 	Visible Light Communication
+// Target Devices:Spartan-3 
+// Tool versions: Nexys-2 from Digilent, Xilinx ISE 13.2
+// Description: 	Sends and receives VR-MPPM encoded data over VLC serial link.
+//						
+//
+// Dependencies: 	clk_div.v, Encode2ts.v, p2p.v, Decode2ts.v
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module ENp2p(pin,pout,serIn,serOut,clk,start,frameSize,r,complete);
+	input clk,start;
+	input [19:0] pin;
+	input serIn;
+	input [7:0] frameSize;
+	input [7:0] r;
+	output [19:0] pout; 
+	output serOut;
+	output complete;
+	parameter A=3'd0, B=3'd1, C=3'd2, D=3'd3, E=3'd4, F=3'd5, G=3'd6, H=3'd7;		
+	
+	reg tempClk;
+	reg tComplete;
+	reg [7:0] loopCount;	
+	reg tStart;
+	reg [2:0] state, nextState;
+	reg enStart, pspStart, deStart;
+	wire [19:0] enPsp, pspDe; //interconnect modules
+	wire enComplete, pspComplete, deComplete;
+	wire serLink;
+	wire newClk;
+	
+	clk_div clkDiv1(.clk(clk),.newClk(newClk),.newDiv(50)); //50 --> 500kHz
+	Encode2ts e1(.m(pin),.frameSize(frameSize),.r(r),.out(enPsp),
+		.clk(clk),.start(enStart),.complete(enComplete));
+	p2p pp1(.pin(enPsp),.pout(pspDe),.serIn(serIn),.serOut(serOut),
+		.clk(newClk),.start(pspStart),.frameSize(frameSize),.complete(pspComplete));
+	Decode2ts d1(.m(pspDe),.frameSize(frameSize),.r(r),.out(pout),
+		.clk(clk),.start(deStart),.complete(deComplete));
+	assign complete = tComplete;
+		
+	initial
+	begin
+		 enStart<=0;
+		 deStart<=0;
+		 pspStart<=0;
+		 nextState<=A;
+	end
+	
+	always @(posedge clk) state <= nextState;
+
+	always @(posedge clk)
+	begin
+		case (state)
+		A: if ((start==1)) nextState<=B; else nextState<=A;
+		B: nextState <= C;
+		C: if (enComplete) nextState<=D; else nextState<=C;
+		D: nextState <= E;
+		E: if (pspComplete) nextState<=F; else nextState<=E;
+		F: nextState <= G;
+		G: if (deComplete) nextState<=H; else nextState<=G;
+		H: nextState<=A;
+		endcase
+	end
+	
+	//do
+	always @(posedge clk)
+	begin
+		case (state)
+		A: begin enStart<=0;pspStart <=0;deStart <=0;  end
+		B: begin tComplete<=0;enStart<=1;  end
+		C:enStart<=0;
+		D:pspStart <=1;
+		E:pspStart <=0;
+		F:deStart <=1;
+		G: begin deStart <=0;end
+		H: tComplete<=1; 
+		endcase
+	end
+endmodule
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+\newpage
+\section{Module for Scanning VR-MPPM Codes}
+\label{sec:scanCodes}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name:	ScanCodes
+// Project Name: 	VLC
+
+// Engineer: 		Muhammad Abu Bakar Siddique
+// email:			mabs239@gmail.com
+// Create Date:  	09:52:41 11/25/2011 
+// Design Name: 	Visible Light Communication
+// Target Devices:Spartan-3 
+// Tool versions: Nexys-2 from Digilent, Xilinx ISE 13.2
+// Description: 	Symbol error rate evaluation on VR-MPPM encoded visible light	
+//						communication channel.
+//
+// Dependencies: 	nCrROM.v, ENp2p.v
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module scanCodes(frameSize,r,serIn,serOut,clk,start,complete,errorCount,dout,reset);
+	input [7:0] frameSize;
+	input [7:0] r;
+	input serIn;
+	input reset;
+	output serOut;
+	output complete;
+	output [15:0] errorCount;
+	input clk,start;
+	output [15:0] dout;
+
+	parameter A=3'd0, B=3'd1, C=3'd2, D=3'd3, E=3'd4, F=3'd5, G=3'd6, H=3'd7;
+	parameter numSymbols=16'hEFFF;
+	
+	reg tStart;
+	reg [15:0] pin; //data to be send serially
+	reg [15:0] tErrorCount;
+	reg [15:0] symbolCount;
+	reg [3:0] state, nextState;
+	reg scanComplete;
+	wire enComplete;
+	wire [15:0] y;
+	wire [15:0] pout; //data received in serially
+
+	assign dout=symbolCount;	
+	assign errorCount=tErrorCount;	
+	assign complete=scanComplete;	
+	nCrROM ncr1(.nCr(y),.n(frameSize),.r(r));
+	ENp2p enp2p1(.pin(pin),.pout(pout),.serIn(serIn),
+		.serOut(serOut),.clk(clk),.start(tStart),
+		.frameSize(frameSize+1'b1),.r(r),.complete(enComplete));
+	initial
+	begin
+		pin<=16'd0;
+		symbolCount<=16'h0000;
+		tStart<=0;
+		nextState<=0;
+		state<=0;
+		scanComplete<=0;
+		tErrorCount<=0;
+	end
+
+	always @(negedge clk) state <= nextState;
+	//nextState
+	always @(clk or state)
+	begin
+		case (state)
+		0: if (start) nextState<=1; else nextState<=0;
+		1: nextState <= 2; //start=1
+		2: nextState <= 3; //start==0
+		3: nextState <= 4; //start==0
+		4: nextState <= 5; //start==0
+		5: if (enComplete) nextState<=6; else nextState<=5; //transmitting (completed?)
+		6: nextState <= 7;
+		7: nextState <= 8;
+		8: nextState <= 9;
+		9: nextState <= 10;
+		10: nextState <= 11;
+		11: nextState <= 12;
+		12: if (scanComplete) nextState<=0; else nextState<=13;
+		13: nextState <= 14;
+		14: nextState <= 15;
+		15: nextState <= 1;
+		endcase
+	end
+	//do
+	always @(posedge clk)
+	begin
+		case (state)
+		0: begin 
+				tStart <=0;
+				scanComplete<=0;
+				pin<=0;
+			end
+		1: begin tStart<=1; end // <= has problems in vvp simulation
+		2: begin tStart<=0; end
+		3: begin tStart<=0; end //wait
+		9: begin
+				if(pin!=pout) tErrorCount<=tErrorCount+1'b1;
+			end
+		10:if(pin>=(y-1)) pin<=0; else pin<=pin+1; 
+		11: begin
+				if(symbolCount>=(numSymbols)) begin
+					symbolCount<=0; 
+					scanComplete<=1;
+				end
+				else
+					symbolCount<=symbolCount+1'b1; 
+			end
+		endcase
+	end
+endmodule
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+
+\newpage
+\section{Seven Segment Display Driver Module}
+\label{sec:LED_7seg}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+////////////////////////////////////////////////////////////////////////////////
+//
+// Create Date:    10/05/07
+// Module Name:    LED_7seg
+// Description:    Convert a 16 bit number into Hex output on the 7seg LED
+//
+// Revision:
+// Revision 0.01 - File Created
+//
+// File format:		This file has been formated to use tabstop of 4
+//
+// Development platform: Spartan-3 Nexys from Digilent
+//
+// Copyright (C) 2007, Rick Huang
+//   
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
+// 
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+// 
+////////////////////////////////////////////////////////////////////////////////
+
+module LED_7seg (mclk, reset, an, ssg, num, pt);
+	input mclk;
+	input reset;
+	output [3:0] an;			// Anode connection
+	output [7:0] ssg;			// Cathod connection
+	input [15:0] num;			// Number input
+	input [3:0] pt;				// Decimal point
+
+	// Divide the incoming clock to a lower frequency
+	reg [15:0] clk_divider;
+	reg clk_low;
+	always @ (posedge mclk)
+	begin
+		if(reset)
+			clk_divider <= 0;
+		else begin
+			clk_divider <= clk_divider + 1;
+			if(clk_divider == 0)
+				clk_low <= 1;
+			else
+				clk_low <= 0;
+		end
+	end
+
+	// Scan the 7-seg LED
+	reg [1:0] digit_scan;
+	reg [3:0] an;
+	reg [3:0] digit_num;
+	reg dec_pt;
+	
+	// Simple ROM to convert digit to LED segments
+	assign ssg[6:0] = (digit_num == 4'h0) ? 7'b1000000 :
+					  (digit_num == 4'h1) ? 7'b1111001 :
+					  (digit_num == 4'h2) ? 7'b0100100 :
+					  (digit_num == 4'h3) ? 7'b0110000 :
+					  (digit_num == 4'h4) ? 7'b0011001 :
+					  (digit_num == 4'h5) ? 7'b0010010 :
+					  (digit_num == 4'h6) ? 7'b0000010 :
+					  (digit_num == 4'h7) ? 7'b1111000 :
+					  (digit_num == 4'h8) ? 7'b0000000 :
+					  (digit_num == 4'h9) ? 7'b0011000 :
+					  (digit_num == 4'ha) ? 7'b0001000 :
+					  (digit_num == 4'hb) ? 7'b0000011 :
+					  (digit_num == 4'hc) ? 7'b1000110 :
+					  (digit_num == 4'hd) ? 7'b0100001 :
+					  (digit_num == 4'he) ? 7'b0000110 :
+					  (digit_num == 4'hf) ? 7'b0001110 : 7'b1111111;
+	assign ssg[7] = !dec_pt;
+	always @ (posedge mclk)
+	begin
+		if(reset)
+			digit_scan <= 0;
+		else if(clk_low)
+		begin
+			digit_scan <= digit_scan + 1;
+			case (digit_scan)
+				2'b00:
+				begin
+					an <= 4'b1110;
+					digit_num <= num[3:0];
+					dec_pt <= pt[0] ? 1 : 0;
+				end
+				2'b01:
+				begin
+					an <= 4'b1101;
+					digit_num <= num[7:4];
+					dec_pt <= pt[1] ? 1 : 0;
+				end
+				2'b10:
+				begin
+					an <= 4'b1011;
+					digit_num <= num[11:8];
+					dec_pt <= pt[2] ? 1 : 0;
+				end
+				2'b11:
+				begin
+					an <= 4'b0111;
+					digit_num <= num[15:12];
+					dec_pt <= pt[3] ? 1 : 0;
+				end
+			endcase
+		end
+	end
+endmodule
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+
+\newpage
+\section{Toplevel Implementation Module}
+\label{sec:vlc}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name:	VLC
+// Project Name: 	VLC
+
+// Engineer: 		Muhammad Abu Bakar Siddique
+// email:		mabs239@gmail.com
+// Create Date:  	09:52:41 11/25/2011 
+// Design Name: 	Visible Light Communication
+// Target Devices:Spartan-3 
+// Tool versions: Nexys-2 from Digilent, Xilinx ISE 13.2
+// Description: 	Symbol error rate evaluation on VR-MPPM encoded visible light	
+//			communication channel
+//
+// Dependencies: 	ScanCodes.v, toplevel.ucf
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module VLC(switches,BTN0,BTN1,BTN2,BTN3,led,JA1,JA2,JA3,clk,anodes,sevenseg);
+	input [7:0] switches;
+	input BTN3; //encoder start
+	input BTN2; //pout or errors
+	input BTN1; //
+	input BTN0; //reset
+	input JA1;
+	input clk;
+	output [7:0] led;
+	output JA2;
+	output JA3;
+	output [3:0] anodes;
+	output [7:0] sevenseg;
+	wire newClk;
+	wire [16:0] seg7;
+	wire [15:0] errorCount;
+	wire [15:0] dout;
+	wire serOut;
+
+	assign seg7=(BTN2)?errorCount:dout;
+	assign JA2=~serOut;
+	assign JA3=serOut;
+	assign led[7] = newClk;	
+	assign led[6] = JA2;	
+	assign led[5] = JA1;	
+	assign led[4:0]=dout;
+
+	scanCodes m7(.frameSize(switches[7:4]),.r(switches[3:0]),.serIn(JA1),
+		.serOut(serOut),.clk(clk),.start(BTN3),
+		.errorCount(errorCount),.dout(dout),.reset(BTN0));
+	LED_7seg m5(.mclk(clk),.reset(BTN0),.an(anodes),.ssg(sevenseg),.num(seg7));	
+endmodule
+
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+
+\newpage
+\section{Module to Evaluate Binomial Coefficients }
+\label{sec:nCrROM}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+//////////////////////////////////////////////////////////////////////////////////
+// Module Name:	nCrROM
+// Project Name: 	VLC
+
+// Engineer: 		Muhammad Abu Bakar Siddique
+// email:			mabs239@gmail.com
+// Create Date:  	09:52:41 11/25/2011 
+// Design Name: 	Visible Light Communication
+// Target Devices:Spartan-3 
+// Tool versions: Nexys-2 from Digilent, Xilinx ISE 13.2
+// Description: 	Evaluates nCr, combinations of n things taken r at a time
+//						
+//
+// Dependencies: 	
+//
+// Revision: 
+// Revision 0.01 - File Created
+// Additional Comments: 
+//
+//////////////////////////////////////////////////////////////////////////////////
+
+module nCrROM(nCr,n,r);
+	output [15:0] nCr;  //n*r size
+	input [3:0] n,r; //frame size 1~16
+	reg [15:0] romTable[0:255];
+	assign nCr = romTable[{n,r}];
+	
+	initial
+	begin //rom table
+		romTable[0]  <=  16'd1;
+		romTable[1]  <=  16'd0;
+		romTable[2]  <=  16'd0;
+		romTable[3]  <=  16'd0;
+		romTable[4]  <=  16'd0;
+		romTable[5]  <=  16'd0;
+		romTable[6]  <=  16'd0;
+		romTable[7]  <=  16'd0;
+		romTable[8]  <=  16'd0;
+		romTable[9]  <=  16'd0;
+		romTable[10]  <=  16'd0;
+		romTable[11]  <=  16'd0;
+		romTable[12]  <=  16'd0;
+		romTable[13]  <=  16'd0;
+		romTable[14]  <=  16'd0;
+		romTable[15]  <=  16'd0;
+		romTable[16]  <=  16'd1;
+		romTable[17]  <=  16'd1;
+		romTable[18]  <=  16'd0;
+		romTable[19]  <=  16'd0;
+		romTable[20]  <=  16'd0;
+		romTable[21]  <=  16'd0;
+		romTable[22]  <=  16'd0;
+		romTable[23]  <=  16'd0;
+		romTable[24]  <=  16'd0;
+		romTable[25]  <=  16'd0;
+		romTable[26]  <=  16'd0;
+		romTable[27]  <=  16'd0;
+		romTable[28]  <=  16'd0;
+		romTable[29]  <=  16'd0;
+		romTable[30]  <=  16'd0;
+		romTable[31]  <=  16'd0;
+		romTable[32]  <=  16'd1;
+		romTable[33]  <=  16'd2;
+		romTable[34]  <=  16'd1;
+		romTable[35]  <=  16'd0;
+		romTable[36]  <=  16'd0;
+		romTable[37]  <=  16'd0;
+		romTable[38]  <=  16'd0;
+		romTable[39]  <=  16'd0;
+		romTable[40]  <=  16'd0;
+		romTable[41]  <=  16'd0;
+		romTable[42]  <=  16'd0;
+		romTable[43]  <=  16'd0;
+		romTable[44]  <=  16'd0;
+		romTable[45]  <=  16'd0;
+		romTable[46]  <=  16'd0;
+		romTable[47]  <=  16'd0;
+		romTable[48]  <=  16'd1;
+		romTable[49]  <=  16'd3;
+		romTable[50]  <=  16'd3;
+		romTable[51]  <=  16'd1;
+		romTable[52]  <=  16'd0;
+		romTable[53]  <=  16'd0;
+		romTable[54]  <=  16'd0;
+		romTable[55]  <=  16'd0;
+		romTable[56]  <=  16'd0;
+		romTable[57]  <=  16'd0;
+		romTable[58]  <=  16'd0;
+		romTable[59]  <=  16'd0;
+		romTable[60]  <=  16'd0;
+		romTable[61]  <=  16'd0;
+		romTable[62]  <=  16'd0;
+		romTable[63]  <=  16'd0;
+		romTable[64]  <=  16'd1;
+		romTable[65]  <=  16'd4;
+		romTable[66]  <=  16'd6;
+		romTable[67]  <=  16'd4;
+		romTable[68]  <=  16'd1;
+		romTable[69]  <=  16'd0;
+		romTable[70]  <=  16'd0;
+		romTable[71]  <=  16'd0;
+		romTable[72]  <=  16'd0;
+		romTable[73]  <=  16'd0;
+		romTable[74]  <=  16'd0;
+		romTable[75]  <=  16'd0;
+		romTable[76]  <=  16'd0;
+		romTable[77]  <=  16'd0;
+		romTable[78]  <=  16'd0;
+		romTable[79]  <=  16'd0;
+		romTable[80]  <=  16'd1;
+		romTable[81]  <=  16'd5;
+		romTable[82]  <=  16'd10;
+		romTable[83]  <=  16'd10;
+		romTable[84]  <=  16'd5;
+		romTable[85]  <=  16'd1;
+		romTable[86]  <=  16'd0;
+		romTable[87]  <=  16'd0;
+		romTable[88]  <=  16'd0;
+		romTable[89]  <=  16'd0;
+		romTable[90]  <=  16'd0;
+		romTable[91]  <=  16'd0;
+		romTable[92]  <=  16'd0;
+		romTable[93]  <=  16'd0;
+		romTable[94]  <=  16'd0;
+		romTable[95]  <=  16'd0;
+		romTable[96]  <=  16'd1;
+		romTable[97]  <=  16'd6;
+		romTable[98]  <=  16'd15;
+		romTable[99]  <=  16'd20;
+		romTable[100]  <=  16'd15;
+		romTable[101]  <=  16'd6;
+		romTable[102]  <=  16'd1;
+		romTable[103]  <=  16'd0;
+		romTable[104]  <=  16'd0;
+		romTable[105]  <=  16'd0;
+		romTable[106]  <=  16'd0;
+		romTable[107]  <=  16'd0;
+		romTable[108]  <=  16'd0;
+		romTable[109]  <=  16'd0;
+		romTable[110]  <=  16'd0;
+		romTable[111]  <=  16'd0;
+		romTable[112]  <=  16'd1;
+		romTable[113]  <=  16'd7;
+		romTable[114]  <=  16'd21;
+		romTable[115]  <=  16'd35;
+		romTable[116]  <=  16'd35;
+		romTable[117]  <=  16'd21;
+		romTable[118]  <=  16'd7;
+		romTable[119]  <=  16'd1;
+		romTable[120]  <=  16'd0;
+		romTable[121]  <=  16'd0;
+		romTable[122]  <=  16'd0;
+		romTable[123]  <=  16'd0;
+		romTable[124]  <=  16'd0;
+		romTable[125]  <=  16'd0;
+		romTable[126]  <=  16'd0;
+		romTable[127]  <=  16'd0;
+		romTable[128]  <=  16'd1;
+		romTable[129]  <=  16'd8;
+		romTable[130]  <=  16'd28;
+		romTable[131]  <=  16'd56;
+		romTable[132]  <=  16'd70;
+		romTable[133]  <=  16'd56;
+		romTable[134]  <=  16'd28;
+		romTable[135]  <=  16'd8;
+		romTable[136]  <=  16'd1;
+		romTable[137]  <=  16'd0;
+		romTable[138]  <=  16'd0;
+		romTable[139]  <=  16'd0;
+		romTable[140]  <=  16'd0;
+		romTable[141]  <=  16'd0;
+		romTable[142]  <=  16'd0;
+		romTable[143]  <=  16'd0;
+		romTable[144]  <=  16'd1;
+		romTable[145]  <=  16'd9;
+		romTable[146]  <=  16'd36;
+		romTable[147]  <=  16'd84;
+		romTable[148]  <=  16'd126;
+		romTable[149]  <=  16'd126;
+		romTable[150]  <=  16'd84;
+		romTable[151]  <=  16'd36;
+		romTable[152]  <=  16'd9;
+		romTable[153]  <=  16'd1;
+		romTable[154]  <=  16'd0;
+		romTable[155]  <=  16'd0;
+		romTable[156]  <=  16'd0;
+		romTable[157]  <=  16'd0;
+		romTable[158]  <=  16'd0;
+		romTable[159]  <=  16'd0;
+		romTable[160]  <=  16'd1;
+		romTable[161]  <=  16'd10;
+		romTable[162]  <=  16'd45;
+		romTable[163]  <=  16'd120;
+		romTable[164]  <=  16'd210;
+		romTable[165]  <=  16'd252;
+		romTable[166]  <=  16'd210;
+		romTable[167]  <=  16'd120;
+		romTable[168]  <=  16'd45;
+		romTable[169]  <=  16'd10;
+		romTable[170]  <=  16'd1;
+		romTable[171]  <=  16'd0;
+		romTable[172]  <=  16'd0;
+		romTable[173]  <=  16'd0;
+		romTable[174]  <=  16'd0;
+		romTable[175]  <=  16'd0;
+		romTable[176]  <=  16'd1;
+		romTable[177]  <=  16'd11;
+		romTable[178]  <=  16'd55;
+		romTable[179]  <=  16'd165;
+		romTable[180]  <=  16'd330;
+		romTable[181]  <=  16'd462;
+		romTable[182]  <=  16'd462;
+		romTable[183]  <=  16'd330;
+		romTable[184]  <=  16'd165;
+		romTable[185]  <=  16'd55;
+		romTable[186]  <=  16'd11;
+		romTable[187]  <=  16'd1;
+		romTable[188]  <=  16'd0;
+		romTable[189]  <=  16'd0;
+		romTable[190]  <=  16'd0;
+		romTable[191]  <=  16'd0;
+		romTable[192]  <=  16'd1;
+		romTable[193]  <=  16'd12;
+		romTable[194]  <=  16'd66;
+		romTable[195]  <=  16'd220;
+		romTable[196]  <=  16'd495;
+		romTable[197]  <=  16'd792;
+		romTable[198]  <=  16'd924;
+		romTable[199]  <=  16'd792;
+		romTable[200]  <=  16'd495;
+		romTable[201]  <=  16'd220;
+		romTable[202]  <=  16'd66;
+		romTable[203]  <=  16'd12;
+		romTable[204]  <=  16'd1;
+		romTable[205]  <=  16'd0;
+		romTable[206]  <=  16'd0;
+		romTable[207]  <=  16'd0;
+		romTable[208]  <=  16'd1;
+		romTable[209]  <=  16'd13;
+		romTable[210]  <=  16'd78;
+		romTable[211]  <=  16'd286;
+		romTable[212]  <=  16'd715;
+		romTable[213]  <=  16'd1287;
+		romTable[214]  <=  16'd1716;
+		romTable[215]  <=  16'd1716;
+		romTable[216]  <=  16'd1287;
+		romTable[217]  <=  16'd715;
+		romTable[218]  <=  16'd286;
+		romTable[219]  <=  16'd78;
+		romTable[220]  <=  16'd13;
+		romTable[221]  <=  16'd1;
+		romTable[222]  <=  16'd0;
+		romTable[223]  <=  16'd0;
+		romTable[224]  <=  16'd1;
+		romTable[225]  <=  16'd14;
+		romTable[226]  <=  16'd91;
+		romTable[227]  <=  16'd364;
+		romTable[228]  <=  16'd1001;
+		romTable[229]  <=  16'd2002;
+		romTable[230]  <=  16'd3003;
+		romTable[231]  <=  16'd3432;
+		romTable[232]  <=  16'd3003;
+		romTable[233]  <=  16'd2002;
+		romTable[234]  <=  16'd1001;
+		romTable[235]  <=  16'd364;
+		romTable[236]  <=  16'd91;
+		romTable[237]  <=  16'd14;
+		romTable[238]  <=  16'd1;
+		romTable[239]  <=  16'd0;
+		romTable[240]  <=  16'd1;
+		romTable[241]  <=  16'd15;
+		romTable[242]  <=  16'd105;
+		romTable[243]  <=  16'd455;
+		romTable[244]  <=  16'd1365;
+		romTable[245]  <=  16'd3003;
+		romTable[246]  <=  16'd5005;
+		romTable[247]  <=  16'd6435;
+		romTable[248]  <=  16'd6435;
+		romTable[249]  <=  16'd5005;
+		romTable[250]  <=  16'd3003;
+		romTable[251]  <=  16'd1365;
+		romTable[252]  <=  16'd455;
+		romTable[253]  <=  16'd105;
+		romTable[254]  <=  16'd15;
+		romTable[255]  <=  16'd1;
+	end
+endmodule
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}
+
+
+\newpage
+\section{User Constraint File}
+\label{sec:toplevel}
+\begin{lstlisting}[style=verilog-style,basicstyle=\tiny]
+#Nexys-2 Digilent
+NET "clk"   LOC = "B8";
+
+NET "BTN3" LOC = "H13";
+NET "BTN3" CLOCK_DEDICATED_ROUTE = FALSE;
+NET "BTN2" LOC = "E18";
+NET "BTN2" CLOCK_DEDICATED_ROUTE = FALSE;
+NET "BTN1" LOC = "D18";
+NET "BTN1" CLOCK_DEDICATED_ROUTE = FALSE;
+NET "BTN0" LOC = "B18";
+NET "BTN0" CLOCK_DEDICATED_ROUTE = FALSE;
+
+NET "JA1" LOC = "L15"; #Serial input
+NET "JA2" LOC = "K12"; #Serial output
+NET "JA3" LOC = "L17"; #Inverted serial output
+
+
+NET "led<0>" LOC = "J14";
+NET "led<1>" LOC = "J15";
+NET "led<2>" LOC = "K15";
+NET "led<3>" LOC = "K14";
+NET "led<4>" LOC = "E17";
+NET "led<5>" LOC = "P15";
+NET "led<6>" LOC = "F4";
+NET "led<7>" LOC = "R4";
+
+NET "anodes<0>"  LOC = "F17"; 
+NET "anodes<1>"  LOC = "H17"; 
+NET "anodes<2>"  LOC = "C18"; 
+NET "anodes<3>"  LOC = "F15"; 
+ 
+NET "sevenseg<0>" LOC = "L18"; 
+NET "sevenseg<1>" LOC = "F18"; 
+NET "sevenseg<2>" LOC = "D17"; 
+NET "sevenseg<3>" LOC = "D16"; 
+NET "sevenseg<4>" LOC = "G14"; 
+NET "sevenseg<5>" LOC = "J17"; 
+NET "sevenseg<6>" LOC = "H14"; 
+
+NET "switches<0>" LOC = "G18"; 
+NET "switches<1>" LOC = "H18"; 
+NET "switches<2>" LOC = "K18";
+NET "switches<3>" LOC = "K17";
+NET "switches<4>" LOC = "L14"; 
+NET "switches<5>" LOC = "L13"; 
+NET "switches<6>" LOC = "N17";
+NET "switches<7>" LOC = "R17";
+//////////////////////////////////////////////////////////////////////////////////
+\end{lstlisting}

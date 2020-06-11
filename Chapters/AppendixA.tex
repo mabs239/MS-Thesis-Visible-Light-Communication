@@ -1,0 +1,119 @@
+% Appendix A
+% add following line for typesetting from subfiles
+% !TeX root = ../uet_thesis.tex
+\chapter{Matlab Implementation}
+\label{AppendixA}
+\lhead{Appendix A. \emph{Matlab Implementation}}
+
+
+\section{Encoder Algorithm}
+\begin{lstlisting}[style=Matlab-editor,basicstyle=\footnotesize]
+function [out]=encode2ts(n,r,m)
+% Encodes an integer to multi pulse position modulation(MPPM) array
+% ENCODE2TS(n,r,IN_WORD) outputs a vector of 1's and 0's representing
+% the input number 'IN_WORD' in 'n' bit codeword with 'r' 1's
+% Most significat digit at hihgest index.
+% n=8;r=4;m=9; encode2ts(n,r,m); > 1 1 0 0 1 1 0 0
+% Input range for IN_WORD: 0 to nCr-1
+% IN_WORD greater than nCr-1 results in array with all 1's
+    out=zeros(1,n);
+    while n>0
+        if (n>r & r>=0) y=nchoosek(n-1,r);
+        else y=0;
+        end%end if
+        if m>=y m=m-y;out(n)=1;r=r-1;
+        else out(n)=0;
+        end%end if
+        n=n-1;
+    end%while
+end%function
+\end{lstlisting}
+
+\newpage
+\section{Decoder Algorithm}
+
+
+
+%\begin{verbatim}
+\begin{lstlisting}[style=Matlab-editor,basicstyle=\footnotesize]
+function out=decode2ts2(in_stream)
+%in_stream=[1 1 1 0 1 0 1 1]  : out_num=14
+%Most significant bit at highest array indices
+
+r=1;					%counts the number of ones in input array (aka pulsed slots)
+out_num=0; 			%calculate and store out_num
+for n=1:length(in_stream) 	%Iterate from LSB to MSB in input array
+    if (in_stream(n)==1)   	%If bit at this index is one then                       %out_number is incremented by Muqami
+                            %Qeemat of the digit
+    if (n > r) %Calculate Muqammi Qeemat from combination value for 
+                   %choose(n,r). choose(n,r) is the possible number of
+                   %combination if r objects are taken from total of n 
+                   %objects. Here the function value is taken as zero if
+                   %r is greater than or equal to n
+                   %Muqammi Qeemat of a digit changes in two ways:(1)
+                   %1. Position of the digit in the array [indexed by n]
+                   %2. Position of the 1 in 1's in the array [indexed by r]
+            out_num=out_num+nchoosek(n-1,r);
+        end
+        r=r+1; % Increment the number of 1s in array
+    end
+end
+%\end{verbatim}
+\end{lstlisting}
+
+\newpage
+\section{Calculate VR-MPPM Code Translation Matrix}
+\begin{lstlisting}[style=Matlab-editor,basicstyle=\footnotesize]
+%------------------------------------------------
+%  getCodeMatrix(code_word_size,pulsed_slots)
+%------------------------------------------------
+function [nCodes code_matrix] = getCodeMatrix(codeword_size, pulsed_slots)
+
+    nCodes = 2^(floor(log2(nchoosek(codeword_size, pulsed_slots))));
+    code_matrix = [];
+    % Extra codes discarded.
+    for i = 1:nCodes
+        code_matrix = [code_matrix; encode2ts(codeword_size, pulsed_slots, i)];
+    end
+    code_matrix;
+end
+\end{lstlisting}
+
+\newpage
+\section{Discrete Frequency Sampling Function}
+\begin{lstlisting}[style=Matlab-editor,basicstyle=\footnotesize]
+function delFn1 = sampledF(freq,fn)
+    delFn1=zeros(1,length(freq));
+    delFn1(find(mod(round(freq*1000),round(fn*1000))==0))=1;
+    %impulses at f=fn,2fn,3fn... 
+end
+\end{lstlisting}
+
+\newpage
+\section{Continuous And Discrete Spectrum Component Calculation}
+\begin{lstlisting}[style=Matlab-editor,basicstyle=\footnotesize]
+%------------------------------------------------
+%   getXcXd2()
+%------------------------------------------------
+%function [f,Xc,Xd]= getXcXd239(Tb,n,r,f_min,f_points,f_max)
+    Xc=[];Xd=[];f=[];    
+    % k --> No of codes words
+    [k A] = getCodeMatrix(n,r);
+    At=A';
+    P_0=(1/k)*eye(k);
+    P_k=(1/(k^2))*ones(k);
+    
+    R_0 = At*P_0*A;
+    R_k = At*P_k*A;
+    
+    for f_indx = 0:f_points
+      freq = f_indx*(f_max-f_min)/f_points + f_min;
+      f =  [f freq];
+      v=exp(j*2*pi*Tb*freq*(1:n));
+      vt=v';
+      Xc = [Xc v*(R_0-R_k)*vt];
+      Xd = [Xd v*R_k*vt];
+      
+    end
+end
+\end{lstlisting}

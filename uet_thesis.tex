@@ -1,0 +1,388 @@
+%% ----------------------------------------------------------------
+%% Thesis.tex -- MAIN FILE (the one that you compile with LaTeX)
+%% ---------------------------------------------------------------- 
+
+% Set up the document
+\documentclass[a4paper, 11pt, oneside]{uet_thesis}  % Use the "Thesis" style, based on the ECS Thesis style by Steve Gunn
+\graphicspath{{Figures/}}  % Location of the graphics files (set up for graphics to be in PDF format)
+
+%AbuBakar: Use the command \comments{} to comment multiple lines
+\newcommand{\comments}[1]{}
+
+%@Abubakar: Footnotes would use symbols instead of numbers
+%\renewcommand{\footnote}{\ensuremath{\fnsymbol{footnote}}}
+
+%% ----------------------------------------------------------------
+%%         Define Packages
+%% ----------------------------------------------------------------
+
+% Include any extra LaTeX packages required
+
+\usepackage[square, numbers, comma, sort&compress]{natbib}  % Use the "Natbib" style for the references in the Bibliography
+
+\usepackage{listings}
+%to insert source code
+%\begin{lstlisting}
+%place your source code here
+%\end{lstlisting}
+
+\usepackage{verbatim}  % Needed for the "comment" environment to make LaTeX comments
+
+%\usepackage[none]{hyphenat} 
+%Use to disable hyphenation
+
+%\usepackage[lofdepth,lotdepth]{subfig} % place figures side be side
+
+
+\usepackage{algorithm2e}
+
+%\usepackage{vector}  % Allows "\bvec{}" and "\buvec{}" for "blackboard" style bold vectors in maths
+
+\usepackage{url}
+\usepackage{natbib}
+
+
+\hypersetup{urlcolor=blue, colorlinks=true}  % Colours hyperlinks in blue, but this can be distracting if there are many links.
+
+%\usepackage{tocloft}% @abubakar define lists
+\usepackage{floatrow}
+
+% remove the unnecessary spacing before and after the headings/subheadings
+\usepackage[compact]{titlesec}
+\titlespacing{\section}{0pt}{*0}{*0}
+\titlespacing{\subsection}{0pt}{*0}{*0}
+\titlespacing{\subsubsection}{0pt}{*0}{*0}
+
+\setlength{\parskip}{6pt}
+%\setlength{\parsep}{0pt}
+%\setlength{\headsep}{0pt}
+%\setlength{\topskip}{0pt}
+
+
+\def \figheight{5in}
+%\def \figwidth{.5\pagewidth}
+\def \figwidth{5in}
+\def \figwidthnew{.5\pagewidth}
+\newcommand {\tab} {\hspace{0.2in}}
+\def \margin{0.7in}
+
+
+%% ----------------------------------------------------------------
+%%           TITLE PAGE
+%% ----------------------------------------------------------------
+\begin{document}
+\frontmatter	  % Begin Roman style (i, ii, iii, iv...) page numbering
+
+% Set up the Title Page
+\title  {Joint Data Transmission and Brightness Control  for White LED Based Visible Light Communication System}
+\session {2006 -- 2011}
+\advisor {Dr. Muhammad Tahir}
+%\\authors {Abu Bakar Siddique}
+\authors {Abu Bakar Siddique \\ 2006-MS-E-17}
+
+%%%Maja ~~~ 2010-Elect-420 \\
+%%%			 Saja ~~~ 2010-Elect-320 \\
+%%%			 Basantay ~~~ 2010-Elect-69 }
+
+\addresses  {\deptname \\ \univname}  % Do not change this here, instead these must be set in the "Thesis.cls" file, please look through it instead
+							%But 'Readme' file forbids any alteration in 'Thesis.cls'. Ooooops
+\date       {\today}
+\subject    {}
+\keywords   {}
+
+\maketitle
+
+
+%% ----------------------------------------------------------------
+%%     SIGNING PAGE MSC/BSC
+%% ----------------------------------------------------------------
+
+\setstretch{1.3}  % It is better to have smaller font and larger line spacing than the other way round
+
+% Define the page headers using the FancyHdr package and set up for one-sided printing
+\fancyhead{}  % Clears all page headers and footers
+\rhead{\thepage}  % Sets the right side header to show the page number
+\lhead{}  % Clears the left side page header
+
+\pagestyle{fancy}  % Finally, use the "fancy" page style to implement the FancyHdr headers
+
+
+%% Select only one of the certification pages  
+\CertificationMSc{}
+%\CertificationBSc{}
+\clearpage  % Certification ended, now start a new page
+
+
+%% ----------------------------------------------------------------
+%%               DECLARATION PAGE
+%% ----------------------------------------------------------------
+
+% Declaration Page required for the Thesis, your institution may give you a different text to place here
+\Declaration{
+%\addtocontents{toc}{\vspace{1em}}  % Add a gap in the Contents, for aesthetics
+
+I declare that the work contained in this thesis is my own, except where explicitly stated otherwise. In addition this work has not been submitted to obtain another degree or professional qualification.
+
+\bigskip
+
+Signed:~~ \rule[0em]{10em}{1.0pt} \\ % This prints a line for the signature 
+Date:~~~~ \rule[0em]{10em}{1.0pt}  % This prints a line to write the date
+}
+\clearpage     % Declaration ended, now start a new page
+
+
+%% ----------------------------------------------------------------
+%%                       Added for Bismillah
+%% ----------------------------------------------------------------
+\setstretch{1.3}  % Return the line spacing back to 1.3
+\pagestyle{empty}  % Page style needs to be empty for this page
+%\bismillah{\includegraphics[angle=0,width=\figwidth]{./Figures/Bismillah.png}}
+
+\bismillah{\includegraphics[angle=0,width=\textwidth]{./Figures/Bismillah2.png}}
+
+
+%% ----------------------------------------------------------------
+%%         ACKNOWLEDGEMENTS
+%% ----------------------------------------------------------------
+
+\setstretch{1.3}  % Reset the line-spacing to 1.3 for body text (if it has changed)
+
+% The Acknowledgements page, for thanking everyone
+\acknowledgements{
+%\addtocontents{toc}{\vspace{1em}}  % Add a gap in the Contents, for aesthetics
+\includegraphics[angle=0,width=\textwidth]{./Figures/darood2.png}
+
+All praise be to Almighty ALLAH who creates and sustains everything. Peace and countless blessings of Almighty Allah be upon his beloved, the last prophet, Hazrat Muhammad, his family and his companions.
+
+This thesis would not have been possible without the help of many people. I want to thank first and foremost my supervisor Dr. Muhammad Tahir for his continuous supply of good ideas and always providing his valuable time to meet in person for discussion of new concepts. He suggested the problem as subject of a master's thesis and helped with hardware equipment to carry out the experiments.
+
+I am thankful to my friends and colleagues at PTCL for their support and encouragement to pursue my studies.
+}
+
+\clearpage  % End of the Acknowledgements
+
+
+
+%% ----------------------------------------------------------------
+%%          DEDICATION TO
+%% ----------------------------------------------------------------
+% End of the pre-able, contents and lists of things
+% Begin the Dedication page
+\setstretch{1.3}  % Return the line spacing back to 1.3
+\pagestyle{empty}  % Page style needs to be empty for this page
+%%\dedicatory{For/Dedicated to/To my\ldots}
+\dedicatory{Dedicated to my parents whose endless help and kind prayers have encouraged me throughout my life}
+
+%% ----------------------------------------------------------------
+\pagestyle{fancy}  %The page style headers have been "empty" all this time, now use the "fancy" headers as defined before to bring them back
+
+
+%% ----------------------------------------------------------------
+%%     TABLE OF CONTENTS
+%% ----------------------------------------------------------------
+\lhead{\emph{Contents}}  % Set the left side page header to "Contents"
+\tableofcontents  % Write out the Table of Contents
+
+
+%% ----------------------------------------------------------------
+%%     LIST OF FIGURES
+%% ----------------------------------------------------------------
+\lhead{\emph{List of Figures}}  % Set the left side page header to "List if Figures"
+\listoffigures  % Write out the List of Figures
+
+
+%% ----------------------------------------------------------------
+%%     LIST OF TABLES
+%% ----------------------------------------------------------------
+\lhead{\emph{List of Tables}}  % Set the left side page header to "List of Tables"
+\listoftables  % Write out the List of Tables
+
+
+%% ----------------------------------------------------------------
+%%     LIST OF ABBREVIATIONS
+%% ----------------------------------------------------------------
+\setstretch{1.5}  % Set the line spacing to 1.5, this makes the following tables easier to read
+\clearpage  % Start a new page
+\lhead{\emph{Abbreviations}}  % Set the left side page header to "Abbreviations"
+\listofsymbols{ll}  % Include a list of Abbreviations (a table of two columns)
+{
+% \textbf{Acronym} & \textbf{W}hat (it) \textbf{S}tands \textbf{F}or \\
+%	& The proposed line coding scheme \\
+AC	& Alternating Current \\
+$B_I$	& Brightness Index \\
+CFT	& Compact Fluorescent Tubes \\
+DC	& Direct Current \\
+DPPM	& Differential Pulse Position Modulation \\
+FSO	& Free Space Optics \\
+FPGA	& Field Programmable Grid Array \\
+GaInN	& Gallium Indium Nitride \\
+HDL	& Hardware Description Language \\
+IR	& Infra Red (Light) \\
+LSB	& Least Significant Bit \\
+LED	& Light Emitting Diode \\
+MSB	& Most Significant Bit \\
+$n$	& Number of time slots in one VR-MPPM frame \\
+OPPM	& Overlapping Pulse Position Modulation \\
+OOK	& On-Off Keying \\
+PPM	& Pulse Position Modulation \\
+PAM	& Pulse Amplitude Modulation \\
+PWM	& Pulse Width Modulation \\
+PSD	& Power Spectral Density \\
+PAM	& Pulse Amplitude Modulation \\
+$r$	& Number of pulsed slots in a VR-MPPM frame  \\
+RF	& Radio Frequency \\
+RGB	& Red-Green-Blue\\
+$s_k$	& Symbol encoded by VR-MPPM \\
+UART	& Universal Asynchronous Receiver/Transmitter \\
+VLC	& Visible Light Communication \\
+VR-MPPM	& Variable-Rate Multi Pulse Position Modulation \\
+Wi-fi	& Wireless Fidelity \\
+}
+
+
+%% ----------------------------------------------------------------
+%%     ABSTRACT
+%% ----------------------------------------------------------------
+% The Abstract Page
+\addtotoc{Abstract}  % Add the "Abstract" page entry to the Contents
+\abstract{
+%\addtocontents{toc}{\vspace{1em}}  % Add a gap in the Contents, for aesthetics
+
+
+With the availability of new more efficient, brighter and cheaper white  LEDs it has become feasible to replace existing incandescence and florescent tube based lighting fixtures with these devices. Visible light communication technology broadcasts high speed data by modulating the light of LEDs, thanks to their fast switching characteristics. These lights need proper dimming control besides data transmission as illumination is their primary feature. Conventionally either pulse width modulation or pulse amplitude modulation is used for brightness control along with some variant of pulse position modulation employed for data transmission. The need for two different modulation schemes increases system complexity. In this thesis we have proposed a variable-rate multi-pulse pulse position modulation as a single line coding scheme that meets the two objectives simultaneously.  The brightness resolution for the proposed code depends upon the number of slots per symbol while the data rate is dependent upon the number of pulsed slots per symbol. We have developed simple iterative algorithms for encoder and decoder implementation. The performance trade-off between brightness resolution and achievable data-rate has been formulated as an optimization problem. This is evaluated for optimal number of slots per symbol for minimum symbol error and maximum brightness control resolution. This thesis also analyses power spectrum of the proposed codes and its dependence upon symbol frame size and brightness control. The proposed code is observed to posses strong spectral components at slot and frame repetition frequencies that display built in timing signal for transmitter-receiver synchronization. Hardware setup is developed to evaluate the effectiveness of proposed codes and the dependence of symbol error rate on brightness index. 
+}
+\clearpage  % Abstract ended, start a new page
+
+
+
+%% ----------------------------------------------------------------
+%%     MAIN BODY ... CHAPTERS
+%% ----------------------------------------------------------------
+\mainmatter	  % Begin normal, numeric (1,2,3...) page numbering
+\pagestyle{fancy}  % Return the page headers back to the "fancy" style
+\onehalfspacing
+% Include the chapters of the thesis, as separate files
+% Just uncomment the lines as you write the chapters
+
+%\input{./Chapters/Chapter1} % Introduction 
+%
+%\input{./Chapters/Chapter2} % What to Write 
+%
+%\input{./Chapters/Chapter3} % Experimental Setup
+%
+%\input{./Chapters/Chapter4} % Experiment 1
+%
+%\input{./Chapters/Chapter5} % Experiment 2
+
+%\input{./Chapters/Chapter6} % Results and Discussion
+
+%\input{./Chapters/Chapter7} % Conclusion
+
+
+\input{./Chapters/Chapter1} % Introduction 
+
+\input{./Chapters/Chapter2} % Literature Review
+
+\input{./Chapters/Chapter3} % Proposed Solution
+
+\input{./Chapters/Chapter4} % Power Spectral Density Analysis
+
+\input{./Chapters/Chapter5} % Implementation and Performance Evaluation
+\input{./Chapters/Chapter6} % Implementation and Performance Evaluation
+
+\input{./Chapters/Chapter7} % Conclusion
+
+
+\comments{
+%This is the general outline of my thesis
+1)	Introduction
+i)	LED: The future Light Source
+ii)	Comparison of VLC with IR and RF
+iii)	White LED Technology
+
+2)	Literature Review
+i)	Brightness control of leds
+(a)	PWM and PAM techniques
+ii)	Optical data transmission techniques
+(a)	PPM, MPPM, VW-MPPM
+iii)	Problem: joint brightness control and data transmission
+(a)	Nakagawa’s Approach
+
+3)	Proposed Solution: Joint Brightness control and data transmission
+i)	PPM extension to multipulse block
+(a)	Combinatorial studies of MPPM
+ii)	MPPM for joint brightness control
+(a)	MPPM line codes for a simple case
+Algorithm for Implementation of MPPM code
+iii)	Decoder Algorithm
+(a)	Flow graph
+(b)	Matlab implementation
+(c)	Decoding example for case (5,2)
+iv)	Encoder Algorithm 
+(a)	Flow graph
+(b)	Matlab implementation
+(c)	Decoding example for case (5,2)
+
+4)	PSD Analysis of proposed code
+i)	Method for PSD analysis
+(a)	Spectra Calculation by 1)Bosik 2) Cariolaro: 
+(b)	Ergodicity and wide sense stationarity
+b)	Statelessness of VR-MPPM: Simplifies PSD Analysis
+i)	Equations simplification for MPPM case
+(a)	PSD analysis of a simple case (n=4, BI=.25,  = .25)
+ii)	Implementation
+(a)	MPPM PSD cases: graphs
+(b)	Matlab code
+iii)	PSD Observations
+(a)	Strong spectral component at bit frequency: clock extraction
+(b)	DC component verifies intuition
+
+5)	Implementation and performance evaluation (Harsware + Error Probability)
+i)	Transmitter
+ii)	Receiver
+iii)	Practical results: P_e Vs Brightness Index
+iv)	Maximization Problem
+
+6)	Conclusion
+a)	Proposed solution better than conventional analogue techniques
+}
+
+
+
+
+%% ----------------------------------------------------------------
+%%     APPENDIX
+%% ----------------------------------------------------------------
+% Now begin the Appendices, including them as separate files
+
+\addtocontents{toc}{\vspace{2em}} % Add a gap in the Contents, for aesthetics
+
+\appendix % Cue to tell LaTeX that the following 'chapters' are Appendices
+
+\input{./Chapters/AppendixA}	% Appendix Title
+\input{./Chapters/AppendixB}	% Appendix Title
+
+%\input{./Chapters/AppendixB} % Appendix Title
+
+%\input{./Chapters/AppendixC} % Appendix Title
+
+\addtocontents{toc}{\vspace{2em}}  % Add a gap in the Contents, for aesthetics
+\backmatter
+
+
+
+%% ----------------------------------------------------------------
+%%     REFERENCES
+%% ----------------------------------------------------------------
+\label{References}
+\lhead{\emph{References}}  % Change the left side page header to "References"
+
+%\bibliographystyle{Natbib}
+\bibliographystyle{unsrt}
+%\bibliographystyle{IEEEtran} %used from paper
+%\bibliographystyle{plainnat}  % Use "unsrtnat" BibTeX style for formatting the references
+
+\bibliography{references}  % The references information are stored in the file named "references.bib"
+
+\end{document}  % The End
+%% ----------------------------------------------------------------

@@ -1,0 +1,22 @@
+% >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+%		Problem statement
+%<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+\begin{frame}{Problem Statement}{When LED have dual function of Illumination and Data Transmission}
+  % - A title should summarize the slide in an understandable fashion
+  %   for anyone who does not follow everything on the slide itself.
+			 \begin{block}{Illumination}
+			  \begin{itemize}
+			  \item
+			    \textbf{How to achieve data transmission without effecting brightness level of LED lights?}
+			  \item
+       			   Data is transmitted by unexpected variations in signal
+			  \item
+       			   These variations change signal DC average, brightness level
+			  \end{itemize}
+			 \end{block}
+
+\end{frame}
+%<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+			  \item
+       			   The proposed scheme appeared as conference paper in \\	CCNC-2011 - Smart Spaces and Personal Area Networks \\ Available at IEEE Explore website: \textbf{Joint Brightness Control and Data Transmission forVisible Light Communication Systems based on White LEDs}
